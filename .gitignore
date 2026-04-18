@@ -1,0 +1,40 @@
+# IDE
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+ehthumbs.db
+
+# Dependencies
+node_modules/
+
+# Build / Output
+dist/
+src/output.css
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment
+.env
+.env.local
+
+# Chrome Extension
+*.crx
+*.pem
+*.zip
+
+# Package lock (optional, 视团队规范而定)
+# package-lock.json
+
+# Claude Code
+.claude/
