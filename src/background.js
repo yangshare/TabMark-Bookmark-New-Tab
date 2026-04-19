@@ -1045,12 +1045,9 @@ chrome.commands.onCommand.addListener((command) => {
   }
 });
 
-// 添加扩展图标点击事件处理
-chrome.action.onClicked.addListener((tab) => {
-  console.log("Extension icon clicked");
-  // 点击扩展图标时切换侧边栏
-  toggleSidePanel();
-});
+// 注意：设置了 action.default_popup 后，chrome.action.onClicked 不会触发
+// 侧边栏切换功能通过快捷键 Alt+B / Command+B 触发
+// 如需在 popup 中打开侧边栏，可通过发送消息实现
 
 // 在 background.js 顶部添加这些变量
 let lastOpenedUrl = '';

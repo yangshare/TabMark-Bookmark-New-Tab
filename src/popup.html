@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>添加到书签</title>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      width: 520px;
+      min-height: 400px;
+      max-height: 620px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-size: 14px;
+      color: #333;
+      background-color: #f5f6f8;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Header */
+    .header {
+      padding: 18px 20px 14px;
+      background-color: #fff;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .header-icon {
+      width: 28px;
+      height: 28px;
+    }
+
+    .header-title {
+      font-size: 17px;
+      font-weight: 600;
+      color: #1a1a1a;
+    }
+
+    /* Content */
+    .content {
+      padding: 18px 20px;
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .form-group {
+      margin-bottom: 18px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: #444;
+      margin-bottom: 7px;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 11px 14px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      font-size: 14px;
+      color: #333;
+      background-color: #fff;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: #10b981;
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
+    }
+
+    .form-input.url-input {
+      background-color: #f8f8f8;
+      color: #777;
+      font-size: 12px;
+    }
+
+    /* Folder Section */
+    .folder-section {
+      background-color: #fff;
+      border: 1px solid #e5e5e5;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .folder-header {
+      padding: 12px 16px;
+      background-color: #fafafa;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .folder-header-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #555;
+    }
+
+    .folder-count {
+      font-size: 11px;
+      color: #999;
+      font-weight: 400;
+    }
+
+    /* Breadcrumb */
+    .breadcrumb {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 10px 16px;
+      background-color: #fdfdfd;
+      border-bottom: 1px solid #f0f0f0;
+      flex-wrap: wrap;
+      min-height: 42px;
+    }
+
+    .breadcrumb-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      color: #666;
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+      background-color: transparent;
+      border: none;
+    }
+
+    .breadcrumb-item:hover {
+      background-color: #f0f0f0;
+      color: #10b981;
+    }
+
+    .breadcrumb-item.current {
+      color: #10b981;
+      font-weight: 600;
+      cursor: default;
+    }
+
+    .breadcrumb-item.current:hover {
+      background-color: transparent;
+    }
+
+    .breadcrumb-separator {
+      color: #ccc;
+      font-size: 14px;
+      user-select: none;
+    }
+
+    .breadcrumb-root {
+      color: #999;
+    }
+
+    /* Folder Cards Grid */
+    .folder-cards-container {
+      padding: 14px;
+      max-height: 280px;
+      overflow-y: auto;
+    }
+
+    .folder-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .folder-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 14px 8px;
+      border: 2px solid transparent;
+      border-radius: 12px;
+      background-color: #f8f9fa;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+      min-height: 90px;
+      position: relative;
+    }
+
+    .folder-card:hover {
+      background-color: #f0f9f6;
+      border-color: #a7f3d0;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    }
+
+    .folder-card.selected {
+      background-color: #e6f7f0;
+      border-color: #10b981;
+      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.15);
+    }
+
+    .folder-card-icon {
+      width: 36px;
+      height: 36px;
+      margin-bottom: 8px;
+      color: #aaa;
+      transition: color 0.2s;
+    }
+
+    .folder-card:hover .folder-card-icon {
+      color: #10b981;
+    }
+
+    .folder-card.selected .folder-card-icon {
+      color: #10b981;
+    }
+
+    .folder-card-name {
+      font-size: 12px;
+      font-weight: 500;
+      color: #444;
+      line-height: 1.3;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      word-break: break-all;
+    }
+
+    .folder-card:hover .folder-card-name {
+      color: #059669;
+    }
+
+    .folder-card.selected .folder-card-name {
+      color: #10b981;
+      font-weight: 600;
+    }
+
+    .folder-card-arrow {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      width: 16px;
+      height: 16px;
+      color: #bbb;
+      opacity: 0;
+      transition: all 0.2s;
+    }
+
+    .folder-card.has-children .folder-card-arrow {
+      opacity: 1;
+    }
+
+    .folder-card:hover .folder-card-arrow {
+      color: #10b981;
+      transform: translateX(2px);
+    }
+
+    .folder-card-count {
+      font-size: 10px;
+      color: #aaa;
+      margin-top: 4px;
+    }
+
+    .folder-card.selected .folder-card-count {
+      color: #6ee7b7;
+    }
+
+    /* Current folder card */
+    .folder-card.current-folder {
+      background-color: #f0f9ff;
+      border: 2px dashed #bae6fd;
+    }
+
+    .folder-card.current-folder:hover {
+      background-color: #e0f2fe;
+      border-color: #7dd3fc;
+    }
+
+    .folder-card.current-folder.selected {
+      background-color: #e6f7f0;
+      border: 2px solid #10b981;
+    }
+
+    .folder-card.current-folder .folder-card-icon {
+      color: #38bdf8;
+    }
+
+    .folder-card.current-folder:hover .folder-card-icon {
+      color: #0ea5e9;
+    }
+
+    .folder-card.current-folder.selected .folder-card-icon {
+      color: #10b981;
+    }
+
+    .folder-card .check-icon {
+      position: absolute;
+      top: 6px;
+      left: 6px;
+      width: 18px;
+      height: 18px;
+      color: #10b981;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .folder-card.selected .check-icon {
+      opacity: 1;
+    }
+
+    /* Empty state */
+    .empty-state {
+      padding: 30px;
+      text-align: center;
+      color: #aaa;
+      font-size: 13px;
+      grid-column: 1 / -1;
+    }
+
+    /* Sub-folders hint */
+    .subfolder-hint {
+      padding: 8px 16px 0;
+      font-size: 11px;
+      color: #999;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .subfolder-hint .material-icons {
+      font-size: 14px;
+    }
+
+    /* Selected folder display */
+    .selected-folder-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      background-color: #f0fdf4;
+      border-top: 1px solid #bbf7d0;
+      font-size: 12px;
+      color: #059669;
+    }
+
+    .selected-folder-bar .material-icons {
+      font-size: 18px;
+      color: #10b981;
+    }
+
+    .selected-folder-bar .path-text {
+      font-weight: 500;
+    }
+
+    /* Footer */
+    .footer {
+      padding: 14px 20px 18px;
+      background-color: #fff;
+      border-top: 1px solid #eee;
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+    }
+
+    .btn {
+      padding: 10px 24px;
+      border: none;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-secondary {
+      background-color: #f0f0f0;
+      color: #555;
+    }
+
+    .btn-secondary:hover {
+      background-color: #e4e4e4;
+    }
+
+    .btn-primary {
+      background-color: #10b981;
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      background-color: #059669;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+
+    .btn-primary:disabled {
+      background-color: #a7f3d0;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    /* Toast */
+    .success-toast {
+      position: fixed;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-50px);
+      background-color: #10b981;
+      color: #fff;
+      padding: 10px 24px;
+      border-radius: 24px;
+      font-size: 13px;
+      font-weight: 600;
+      opacity: 0;
+      transition: all 0.3s ease;
+      pointer-events: none;
+      z-index: 1000;
+      box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
+    }
+
+    .success-toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    /* Scrollbar */
+    .folder-cards-container::-webkit-scrollbar {
+      width: 5px;
+    }
+    .folder-cards-container::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .folder-cards-container::-webkit-scrollbar-thumb {
+      background: #ddd;
+      border-radius: 3px;
+    }
+    .folder-cards-container::-webkit-scrollbar-thumb:hover {
+      background: #bbb;
+    }
+
+    .content::-webkit-scrollbar {
+      width: 5px;
+    }
+    .content::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .content::-webkit-scrollbar-thumb {
+      background: #ddd;
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <img src="../images/icon-48.png" alt="TabMark" class="header-icon">
+    <div class="header-title">添加到书签</div>
+  </div>
+
+  <div class="content">
+    <div class="form-group">
+      <label class="form-label">名称</label>
+      <input type="text" id="bookmark-title" class="form-input" placeholder="书签名称">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">网址</label>
+      <input type="text" id="bookmark-url" class="form-input url-input" readonly>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">保存位置</label>
+      <div class="folder-section">
+        <div class="folder-header">
+          <div class="folder-header-left">
+            <span class="material-icons" style="font-size:18px;color:#10b981;">folder_open</span>
+            <span>选择文件夹</span>
+          </div>
+          <span id="folder-count" class="folder-count"></span>
+        </div>
+
+        <!-- Breadcrumb -->
+        <div id="breadcrumb" class="breadcrumb">
+          <button class="breadcrumb-item breadcrumb-root" data-folder-id="root">
+            <span class="material-icons" style="font-size:14px;">home</span>
+          </button>
+        </div>
+
+        <!-- Folder Cards -->
+        <div class="folder-cards-container">
+          <div id="folder-cards" class="folder-cards-grid">
+            <div class="empty-state">正在加载文件夹...</div>
+          </div>
+        </div>
+
+        <!-- Selected folder display -->
+        <div id="selected-folder-bar" class="selected-folder-bar" style="display:none;">
+          <span class="material-icons">check_circle</span>
+          <span class="path-text" id="selected-folder-path"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <button id="btn-cancel" class="btn btn-secondary">取消</button>
+    <button id="btn-save" class="btn btn-primary">保存</button>
+  </div>
+
+  <div id="toast" class="success-toast">已保存到书签</div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
