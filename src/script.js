@@ -906,6 +906,11 @@ document.addEventListener('DOMContentLoaded', function() {
   );
 });
 
+let sortableInstances = [];
+let isDragging = false;
+let periodicSyncIntervalId = null;
+const DEFAULT_BOOKMARK_COLORS = { primary: [200, 200, 200], secondary: [220, 220, 220] };
+
 // 修改书签缓存对象的定义
 const bookmarksCache = {
   data: new Map(),
@@ -1791,8 +1796,7 @@ function getColors(img) {
   const sortedColors = Object.entries(colors).sort((a, b) => b[1] - a[1]);
   
   if (sortedColors.length === 0) {
-    // 如果图片完全透明，返回默认颜色
-    return { primary: [200, 200, 200], secondary: [220, 220, 220] };
+    return DEFAULT_BOOKMARK_COLORS;
   }
   
   const primaryColor = sortedColors[0][0].split(',').map(Number);
@@ -1815,12 +1819,8 @@ function updateBookmarkColors(bookmark, img, card) {
   };
 
   img.onerror = function () {
-    const defaultColors = {
-      primary: [200, 200, 200],
-      secondary: [220, 220, 220]
-    };
-    applyColors(card, defaultColors);
-    ColorCache.set(bookmark.id, bookmark.url, defaultColors);
+    applyColors(card, DEFAULT_BOOKMARK_COLORS);
+    ColorCache.set(bookmark.id, bookmark.url, DEFAULT_BOOKMARK_COLORS);
   };
 }
 
@@ -1837,30 +1837,22 @@ function createBookmarkCard(bookmark, index) {
   img.className = 'w-6 h-6 mr-2';
   img.src = `chrome-extension://${chrome.runtime.id}/_favicon/?pageUrl=${encodeURIComponent(bookmark.url)}&size=32`;
 
-  // 尝试从缓存获取颜色
-  const cachedColors = localStorage.getItem(`bookmark-colors-${bookmark.id}`);
-  
+  const cachedColors = ColorCache.get(bookmark.id, bookmark.url);
+
   if (cachedColors) {
-    // 如果有缓存，直接应用缓存的颜色
-    const colors = JSON.parse(cachedColors);
-    applyColors(card, colors);
-    
-    // 只加载 favicon 图片，不重新计算颜色
+    applyColors(card, cachedColors);
     img.onload = null;
   } else {
-    // 只在没有缓存时计算颜色
     img.onload = function() {
       const colors = getColors(img);
       applyColors(card, colors);
-      localStorage.setItem(`bookmark-colors-${bookmark.id}`, JSON.stringify(colors));
+      ColorCache.set(bookmark.id, bookmark.url, colors);
     };
   }
 
   img.onerror = function() {
-    // 处 favicon 加载失败的情况
-    const defaultColors = { primary: [200, 200, 200], secondary: [220, 220, 220] };
-    applyColors(card, defaultColors);
-    localStorage.setItem(`bookmark-colors-${bookmark.id}`, JSON.stringify(defaultColors));
+    applyColors(card, DEFAULT_BOOKMARK_COLORS);
+    ColorCache.set(bookmark.id, bookmark.url, DEFAULT_BOOKMARK_COLORS);
   };
 
   const favicon = document.createElement('div');
@@ -2896,6 +2888,9 @@ function createFolderCard(folder, index) {
 }
 
 function setupSortable() {
+  sortableInstances.forEach(s => { try { s.destroy(); } catch(e) {} });
+  sortableInstances = [];
+
   const ROOT_FOLDER_ID = '1';
   const BOOKMARKS_LIST_ID = 'bookmarks-list';
 
@@ -2928,7 +2923,10 @@ function setupSortable() {
 
   const bookmarksList = document.getElementById(BOOKMARKS_LIST_ID);
   if (bookmarksList) {
-    new Sortable(bookmarksList, sortableOptions({
+    const bookmarksListSortable = new Sortable(bookmarksList, sortableOptions({
+      onStart: function () {
+        isDragging = true;
+      },
       onEnd: function (evt) {
         const itemId = evt.item.dataset.id;
         const newIndex = evt.newIndex;
@@ -2970,12 +2968,14 @@ function setupSortable() {
           .then(() => {
             hideMovingFeedback(evt.item);
             if (isCrossContainer) {
+              evt.item.remove();
               bookmarksCache.delete(newParentId);
               const currentParentId = bookmarksList.dataset.parentId;
               bookmarksCache.delete(currentParentId);
-              updateBookmarksDisplay(currentParentId);
-              // 跨容器拖拽后刷新左侧目录树，确保文件夹结构与真实书签树一致
-              refreshCategoriesTree();
+              delete bookmarkOrderCache[currentParentId];
+              if (evt.item.classList.contains('bookmark-folder')) {
+                refreshCategoriesTree();
+              }
             } else {
               showSuccessFeedback(evt.item);
             }
@@ -2989,17 +2989,22 @@ function setupSortable() {
             } else {
               syncBookmarkOrder(newParentId);
             }
+          })
+          .finally(() => {
+            isDragging = false;
           });
       }
     }));
+    sortableInstances.push(bookmarksListSortable);
   } else {
     console.error('Bookmarks list element not found');
   }
 
   const categoriesList = document.getElementById('categories-list');
   if (categoriesList) {
-    new Sortable(categoriesList, sortableOptions({
+    const categoriesListSortable = new Sortable(categoriesList, sortableOptions({
       onStart: function (evt) {
+        isDragging = true;
         console.log('Category drag started:', evt.item.dataset.id);
       },
       onEnd: function (evt) {
@@ -3007,7 +3012,10 @@ function setupSortable() {
         const newIndex = evt.newIndex;
         const bookmarkId = itemEl.dataset.id;
 
-        if (rejectDropToBookmarksList(evt)) return;
+        if (rejectDropToBookmarksList(evt)) {
+          isDragging = false;
+          return;
+        }
 
         const newParentId = resolveParentId(evt.to);
 
@@ -3023,13 +3031,16 @@ function setupSortable() {
         if (evt.oldIndex !== evt.newIndex || evt.from !== evt.to) {
           moveBookmark(bookmarkId, newParentId, newIndex);
         }
+        isDragging = false;
       }
     }));
+    sortableInstances.push(categoriesListSortable);
 
     const folders = categoriesList.querySelectorAll('li ul');
     folders.forEach((folder, index) => {
-      new Sortable(folder, sortableOptions({
+      const folderSortable = new Sortable(folder, sortableOptions({
         onStart: function (evt) {
+          isDragging = true;
           console.log('Subfolder drag started:', evt.item.dataset.id);
         },
         onEnd: function (evt) {
@@ -3037,7 +3048,10 @@ function setupSortable() {
           const newIndex = evt.newIndex;
           const bookmarkId = itemEl.dataset.id;
 
-          if (rejectDropToBookmarksList(evt)) return;
+          if (rejectDropToBookmarksList(evt)) {
+            isDragging = false;
+            return;
+          }
 
           const newParentId = resolveParentId(evt.to);
 
@@ -3053,8 +3067,10 @@ function setupSortable() {
           if (evt.oldIndex !== evt.newIndex || evt.from !== evt.to) {
             moveBookmark(bookmarkId, newParentId, newIndex);
           }
+          isDragging = false;
         }
       }));
+      sortableInstances.push(folderSortable);
     });
   } else {
     console.error('Categories list element not found');
@@ -3108,10 +3124,10 @@ function updateAffectedBookmarks(parentId, movedItemId, newIndex) {
     const bookmarksList = document.getElementById('bookmarks-list');
     const bookmarkElements = Array.from(bookmarksList.children);
     const movedElement = bookmarksList.querySelector(`[data-id="${movedItemId}"]`);
-    
+
     if (!movedElement) {
-      console.error('Moved element not found');
-      reject(new Error('Moved element not found'));
+      // 元素可能已被 Sortable 移到其他容器（跨容器拖拽），由调用方处理 UI 更新
+      resolve();
       return;
     }
 
@@ -3647,18 +3663,23 @@ function syncBookmarkOrder(parentId) {
     if (JSON.stringify(chromeOrder) !== JSON.stringify(cachedOrder)) {
       // 更新缓存
       bookmarksCache.set(parentId, bookmarks);
-      
+
       // 重新渲染当前页
-      renderBookmarksPage({ bookmarks, totalCount: bookmarks.length }, 0);
+      updateBookmarksDisplay(parentId);
     }
   });
 }
 
 // 添加一个定期同步函数
 function startPeriodicSync() {
-  setInterval(() => {
-      const bookmarksList = document.getElementById('bookmarks-list');
-      if (bookmarksList && bookmarksList.dataset.parentId) {
+  if (periodicSyncIntervalId) {
+    clearInterval(periodicSyncIntervalId);
+  }
+  periodicSyncIntervalId = setInterval(() => {
+    if (isDragging) return;
+
+    const bookmarksList = document.getElementById('bookmarks-list');
+    if (bookmarksList && bookmarksList.dataset.parentId) {
       const currentParentId = bookmarksList.dataset.parentId;
       try {
         syncBookmarkOrder(currentParentId);
@@ -3940,22 +3961,19 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function updateBookmarkCardColors(bookmarkCard, newUrl, img) {
-    // 清旧的缓存
-    localStorage.removeItem(`bookmark-colors-${bookmarkCard.dataset.id}`);
-    
-    // 更新 favicon URL
+    const bookmarkId = bookmarkCard.dataset.id;
+
     img.src = `chrome-extension://${chrome.runtime.id}/_favicon/?pageUrl=${encodeURIComponent(newUrl)}&size=32&t=${Date.now()}`;
-    
+
     img.onload = function () {
       const colors = getColors(img);
       applyColors(bookmarkCard, colors);
-      localStorage.setItem(`bookmark-colors-${bookmarkCard.dataset.id}`, JSON.stringify(colors));
+      ColorCache.set(bookmarkId, newUrl, colors);
     };
-    
+
     img.onerror = function () {
-      const defaultColors = { primary: [200, 200, 200], secondary: [220, 220, 220] };
-      applyColors(bookmarkCard, defaultColors);
-      localStorage.setItem(`bookmark-colors-${bookmarkCard.dataset.id}`, JSON.stringify(defaultColors));
+      applyColors(bookmarkCard, DEFAULT_BOOKMARK_COLORS);
+      ColorCache.set(bookmarkId, newUrl, DEFAULT_BOOKMARK_COLORS);
     };
   }
 
@@ -6483,18 +6501,6 @@ function initScrollIndicator() {
   
   // 初始检查和窗口大小变化时重新检查
 }
-
-// 在DOMContentLoaded事件中调用
-document.addEventListener('DOMContentLoaded', function() {
-  // 初始化虚拟滚动
-  initVirtualScroll();
-  
-  // 初始化滚动指示器
-  initScrollIndicator();
-  
-  // 其他初始化代码...
-  startPeriodicSync();
-});
 
 
 
