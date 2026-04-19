@@ -2896,41 +2896,109 @@ function createFolderCard(folder, index) {
 }
 
 function setupSortable() {
-  const bookmarksList = document.getElementById('bookmarks-list');
-  if (bookmarksList) {
-    new Sortable(bookmarksList, {
+  const ROOT_FOLDER_ID = '1';
+  const BOOKMARKS_LIST_ID = 'bookmarks-list';
+
+  function sortableOptions(extra) {
+    return {
       animation: 150,
+      group: { name: 'nested', pull: true, put: true },
+      fallbackOnBody: true,
+      swapThreshold: 0.65,
+      ...extra
+    };
+  }
+
+  function restoreDragItem(evt) {
+    evt.from.insertBefore(evt.item, evt.from.children[evt.oldIndex] || null);
+  }
+
+  function resolveParentId(targetEl) {
+    const li = targetEl.closest('li');
+    return li ? li.dataset.id : ROOT_FOLDER_ID;
+  }
+
+  function rejectDropToBookmarksList(evt) {
+    if (evt.to.id === BOOKMARKS_LIST_ID) {
+      restoreDragItem(evt);
+      return true;
+    }
+    return false;
+  }
+
+  const bookmarksList = document.getElementById(BOOKMARKS_LIST_ID);
+  if (bookmarksList) {
+    new Sortable(bookmarksList, sortableOptions({
       onEnd: function (evt) {
         const itemId = evt.item.dataset.id;
-        const newParentId = bookmarksList.dataset.parentId;
         const newIndex = evt.newIndex;
+
+        // Sortable 无法跨 aside/main 容器检测放置目标
+        // 手动通过鼠标位置判断是否放在了左侧文件夹上
+        let newParentId;
+        let isCrossContainer;
+
+        if (evt.from !== evt.to) {
+          // Sortable 检测到的跨容器拖拽（兜底）
+          newParentId = resolveParentId(evt.to);
+          isCrossContainer = true;
+        } else {
+          // 隐藏拖拽元素，检测鼠标下方的真实元素
+          evt.item.style.display = 'none';
+          const dropTarget = document.elementFromPoint(evt.originalEvent.clientX, evt.originalEvent.clientY);
+          evt.item.style.display = '';
+
+          const categoryLi = dropTarget && dropTarget.closest('#categories-list li[data-id]');
+          if (categoryLi) {
+            newParentId = categoryLi.dataset.id;
+            isCrossContainer = true;
+          } else {
+            newParentId = bookmarksList.dataset.parentId;
+            isCrossContainer = false;
+          }
+        }
 
         showMovingFeedback(evt.item);
 
-        moveBookmark(itemId, newParentId, newIndex)
+        // 跨容器拖拽时，evt.newIndex 是源列表中的位置，不适用于目标文件夹
+        // 需要查询目标文件夹的子项数量来确定真实的插入索引
+        const movePromise = isCrossContainer
+          ? getTargetFolderIndex(newParentId).then(targetIndex => moveBookmark(itemId, newParentId, targetIndex))
+          : moveBookmark(itemId, newParentId, newIndex);
+
+        movePromise
           .then(() => {
             hideMovingFeedback(evt.item);
-            showSuccessFeedback(evt.item);
+            if (isCrossContainer) {
+              bookmarksCache.delete(newParentId);
+              const currentParentId = bookmarksList.dataset.parentId;
+              bookmarksCache.delete(currentParentId);
+              updateBookmarksDisplay(currentParentId);
+              // 跨容器拖拽后刷新左侧目录树，确保文件夹结构与真实书签树一致
+              refreshCategoriesTree();
+            } else {
+              showSuccessFeedback(evt.item);
+            }
           })
           .catch(error => {
             console.error('Error moving bookmark:', error);
             hideMovingFeedback(evt.item);
             showErrorFeedback(evt.item);
-            syncBookmarkOrder(newParentId);
+            if (isCrossContainer) {
+              restoreDragItem(evt);
+            } else {
+              syncBookmarkOrder(newParentId);
+            }
           });
       }
-    });
+    }));
   } else {
     console.error('Bookmarks list element not found');
   }
 
   const categoriesList = document.getElementById('categories-list');
   if (categoriesList) {
-    new Sortable(categoriesList, {
-      animation: 150,
-      group: 'nested',
-      fallbackOnBody: true,
-      swapThreshold: 0.65,
+    new Sortable(categoriesList, sortableOptions({
       onStart: function (evt) {
         console.log('Category drag started:', evt.item.dataset.id);
       },
@@ -2938,7 +3006,10 @@ function setupSortable() {
         const itemEl = evt.item;
         const newIndex = evt.newIndex;
         const bookmarkId = itemEl.dataset.id;
-        const newParentId = evt.to.closest('li') ? evt.to.closest('li').dataset.id : '1';
+
+        if (rejectDropToBookmarksList(evt)) return;
+
+        const newParentId = resolveParentId(evt.to);
 
         console.log('Category moved:', {
           bookmarkId: bookmarkId,
@@ -2953,15 +3024,11 @@ function setupSortable() {
           moveBookmark(bookmarkId, newParentId, newIndex);
         }
       }
-    });
+    }));
 
     const folders = categoriesList.querySelectorAll('li ul');
     folders.forEach((folder, index) => {
-      new Sortable(folder, {
-        group: 'nested',
-        animation: 150,
-        fallbackOnBody: true,
-        swapThreshold: 0.65,
+      new Sortable(folder, sortableOptions({
         onStart: function (evt) {
           console.log('Subfolder drag started:', evt.item.dataset.id);
         },
@@ -2969,7 +3036,10 @@ function setupSortable() {
           const itemEl = evt.item;
           const newIndex = evt.newIndex;
           const bookmarkId = itemEl.dataset.id;
-          const newParentId = evt.to.closest('li') ? evt.to.closest('li').dataset.id : '1';
+
+          if (rejectDropToBookmarksList(evt)) return;
+
+          const newParentId = resolveParentId(evt.to);
 
           console.log('Subfolder item moved:', {
             bookmarkId: bookmarkId,
@@ -2984,21 +3054,44 @@ function setupSortable() {
             moveBookmark(bookmarkId, newParentId, newIndex);
           }
         }
-      });
+      }));
     });
   } else {
     console.error('Categories list element not found');
   }
 }
 
+// 获取目标文件夹的子项数量，作为跨容器拖拽的插入索引（追加到末尾）
+function getTargetFolderIndex(folderId) {
+  return new Promise((resolve) => {
+    chrome.bookmarks.getChildren(folderId, (children) => {
+      if (chrome.runtime.lastError || !children) {
+        resolve(0);
+        return;
+      }
+      resolve(children.length);
+    });
+  });
+}
+
+// 刷新左侧目录树
+function refreshCategoriesTree() {
+  chrome.bookmarks.getTree(function (nodes) {
+    if (nodes && nodes[0] && nodes[0].children) {
+      bookmarkTreeNodes = nodes;
+      displayBookmarkCategories(nodes[0].children, 0, null, '1');
+    }
+  });
+}
+
 function moveBookmark(itemId, newParentId, newIndex) {
   return new Promise((resolve, reject) => {
-    chrome.bookmarks.move(itemId, { index: newIndex }, (result) => {
+    chrome.bookmarks.move(itemId, { parentId: newParentId, index: newIndex }, (result) => {
       if (chrome.runtime.lastError) {
         console.error('Error moving bookmark:', chrome.runtime.lastError);
         reject(chrome.runtime.lastError);
       } else {
-        console.log(`Bookmark ${itemId} moved to index ${result.index}`);
+        console.log(`Bookmark ${itemId} moved to parentId=${result.parentId}, index=${result.index}`);
         updateAffectedBookmarks(newParentId, itemId, result.index)
           .then(() => {
             console.log(`Bookmark ${itemId} position updated in UI`);
