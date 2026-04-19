@@ -69,7 +69,7 @@ function enterFolder(folderId, folderTitle) {
 
   renderBreadcrumb();
 
-  const children = findFolderChildren(bookmarkTreeData, folderId);
+  const children = findFolderChildren(bookmarkTreeData, folderId) || [];
   renderFolderCards(children);
 
   const folderCount = children.length;
@@ -83,10 +83,10 @@ function findFolderChildren(nodes, folderId) {
     }
     if (node.children) {
       const result = findFolderChildren(node.children, folderId);
-      if (result) return result;
+      if (result !== null) return result;
     }
   }
-  return [];
+  return null;
 }
 
 function findFolderInfo(nodes, folderId) {
