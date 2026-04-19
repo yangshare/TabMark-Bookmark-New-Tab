@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>添加到书签</title>
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <style>
     * {
       margin: 0;
@@ -344,10 +343,6 @@
       gap: 4px;
     }
 
-    .subfolder-hint .material-icons {
-      font-size: 14px;
-    }
-
     /* Selected folder display */
     .selected-folder-bar {
       display: flex;
@@ -358,11 +353,6 @@
       border-top: 1px solid #bbf7d0;
       font-size: 12px;
       color: #059669;
-    }
-
-    .selected-folder-bar .material-icons {
-      font-size: 18px;
-      color: #10b981;
     }
 
     .selected-folder-bar .path-text {
@@ -489,7 +479,7 @@
       <div class="folder-section">
         <div class="folder-header">
           <div class="folder-header-left">
-            <span class="material-icons" style="font-size:18px;color:#10b981;">folder_open</span>
+            <svg viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px;color:#10b981;flex-shrink:0;"><path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h5.17l2 2H20v8z"/></svg>
             <span>选择文件夹</span>
           </div>
           <span id="folder-count" class="folder-count"></span>
@@ -498,7 +488,7 @@
         <!-- Breadcrumb -->
         <div id="breadcrumb" class="breadcrumb">
           <button class="breadcrumb-item breadcrumb-root" data-folder-id="root">
-            <span class="material-icons" style="font-size:14px;">home</span>
+            <svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;flex-shrink:0;"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
           </button>
         </div>
 
@@ -511,7 +501,7 @@
 
         <!-- Selected folder display -->
         <div id="selected-folder-bar" class="selected-folder-bar" style="display:none;">
-          <span class="material-icons">check_circle</span>
+          <svg viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px;color:#10b981;flex-shrink:0;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
           <span class="path-text" id="selected-folder-path"></span>
         </div>
       </div>

@@ -1045,9 +1045,7 @@ chrome.commands.onCommand.addListener((command) => {
   }
 });
 
-// 注意：设置了 action.default_popup 后，chrome.action.onClicked 不会触发
-// 侧边栏切换功能通过快捷键 Alt+B / Command+B 触发
-// 如需在 popup 中打开侧边栏，可通过发送消息实现
+// action.default_popup 设置后 chrome.action.onClicked 不再触发
 
 // 在 background.js 顶部添加这些变量
 let lastOpenedUrl = '';
