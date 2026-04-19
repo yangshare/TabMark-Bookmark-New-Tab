@@ -12,25 +12,30 @@
     }
 
     body {
-      width: 520px;
-      min-height: 400px;
-      max-height: 620px;
+      width: 800px;
+      height: 600px;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       font-size: 14px;
       color: #333;
-      background-color: #f5f6f8;
+      background-color: #fff;
       display: flex;
-      flex-direction: column;
+      overflow: hidden;
     }
 
-    /* Header */
-    .header {
-      padding: 18px 20px 14px;
-      background-color: #fff;
-      border-bottom: 1px solid #eee;
+    .left-panel {
+      width: 300px;
+      display: flex;
+      flex-direction: column;
+      padding: 24px;
+      border-right: 1px solid #eee;
+      background-color: #fafafa;
+    }
+
+    .left-header {
       display: flex;
       align-items: center;
       gap: 10px;
+      margin-bottom: 28px;
     }
 
     .header-icon {
@@ -44,23 +49,24 @@
       color: #1a1a1a;
     }
 
-    /* Content */
-    .content {
-      padding: 18px 20px;
+    .left-content {
       flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
       overflow-y: auto;
     }
 
     .form-group {
-      margin-bottom: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
     }
 
     .form-label {
-      display: block;
       font-size: 13px;
       font-weight: 600;
-      color: #444;
-      margin-bottom: 7px;
+      color: #555;
     }
 
     .form-input {
@@ -81,53 +87,60 @@
     }
 
     .form-input.url-input {
-      background-color: #f8f8f8;
+      background-color: #f5f5f5;
       color: #777;
       font-size: 12px;
     }
 
-    /* Folder Section */
+    .left-footer {
+      margin-top: 16px;
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
+
     .folder-section {
-      background-color: #fff;
-      border: 1px solid #e5e5e5;
-      border-radius: 12px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
       overflow: hidden;
+      background-color: #fff;
     }
 
     .folder-header {
-      padding: 12px 16px;
+      padding: 14px 18px;
       background-color: #fafafa;
       border-bottom: 1px solid #eee;
       display: flex;
       align-items: center;
       justify-content: space-between;
+      flex-shrink: 0;
     }
 
     .folder-header-left {
       display: flex;
       align-items: center;
       gap: 8px;
-      font-size: 13px;
+      font-size: 14px;
       font-weight: 600;
-      color: #555;
+      color: #444;
     }
 
     .folder-count {
-      font-size: 11px;
+      font-size: 12px;
       color: #999;
       font-weight: 400;
     }
 
-    /* Breadcrumb */
     .breadcrumb {
       display: flex;
       align-items: center;
       gap: 4px;
-      padding: 10px 16px;
+      padding: 10px 18px;
       background-color: #fdfdfd;
       border-bottom: 1px solid #f0f0f0;
       flex-wrap: wrap;
-      min-height: 42px;
+      flex-shrink: 0;
     }
 
     .breadcrumb-item {
@@ -170,10 +183,9 @@
       color: #999;
     }
 
-    /* Folder Cards Grid */
     .folder-cards-container {
+      flex: 1;
       padding: 14px;
-      max-height: 280px;
       overflow-y: auto;
     }
 
@@ -333,44 +345,24 @@
       grid-column: 1 / -1;
     }
 
-    /* Sub-folders hint */
-    .subfolder-hint {
-      padding: 8px 16px 0;
-      font-size: 11px;
-      color: #999;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    /* Selected folder display */
     .selected-folder-bar {
       display: flex;
       align-items: center;
       gap: 8px;
-      padding: 10px 16px;
+      padding: 10px 18px;
       background-color: #f0fdf4;
       border-top: 1px solid #bbf7d0;
       font-size: 12px;
       color: #059669;
+      flex-shrink: 0;
     }
 
     .selected-folder-bar .path-text {
       font-weight: 500;
     }
 
-    /* Footer */
-    .footer {
-      padding: 14px 20px 18px;
-      background-color: #fff;
-      border-top: 1px solid #eee;
-      display: flex;
-      gap: 12px;
-      justify-content: flex-end;
-    }
-
     .btn {
-      padding: 10px 24px;
+      padding: 10px 20px;
       border: none;
       border-radius: 10px;
       font-size: 14px;
@@ -380,12 +372,12 @@
     }
 
     .btn-secondary {
-      background-color: #f0f0f0;
+      background-color: #e8e8e8;
       color: #555;
     }
 
     .btn-secondary:hover {
-      background-color: #e4e4e4;
+      background-color: #ddd;
     }
 
     .btn-primary {
@@ -430,13 +422,15 @@
       opacity: 1;
     }
 
-    /* Scrollbar */
+    .left-content::-webkit-scrollbar,
     .folder-cards-container::-webkit-scrollbar {
       width: 5px;
     }
+    .left-content::-webkit-scrollbar-track,
     .folder-cards-container::-webkit-scrollbar-track {
       background: transparent;
     }
+    .left-content::-webkit-scrollbar-thumb,
     .folder-cards-container::-webkit-scrollbar-thumb {
       background: #ddd;
       border-radius: 3px;
@@ -444,73 +438,58 @@
     .folder-cards-container::-webkit-scrollbar-thumb:hover {
       background: #bbb;
     }
-
-    .content::-webkit-scrollbar {
-      width: 5px;
-    }
-    .content::-webkit-scrollbar-track {
-      background: transparent;
-    }
-    .content::-webkit-scrollbar-thumb {
-      background: #ddd;
-      border-radius: 3px;
-    }
   </style>
 </head>
 <body>
-  <div class="header">
-    <img src="../images/icon-48.png" alt="TabMark" class="header-icon">
-    <div class="header-title">添加到书签</div>
-  </div>
-
-  <div class="content">
-    <div class="form-group">
-      <label class="form-label">名称</label>
-      <input type="text" id="bookmark-title" class="form-input" placeholder="书签名称">
+  <div class="left-panel">
+    <div class="left-header">
+      <img src="../images/icon-48.png" alt="TabMark" class="header-icon">
+      <div class="header-title">添加到书签</div>
     </div>
 
-    <div class="form-group">
-      <label class="form-label">网址</label>
-      <input type="text" id="bookmark-url" class="form-input url-input" readonly>
-    </div>
+    <div class="left-content">
+      <div class="form-group">
+        <label class="form-label">名称</label>
+        <input type="text" id="bookmark-title" class="form-input" placeholder="书签名称">
+      </div>
 
-    <div class="form-group">
-      <label class="form-label">保存位置</label>
-      <div class="folder-section">
-        <div class="folder-header">
-          <div class="folder-header-left">
-            <svg viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px;color:#10b981;flex-shrink:0;"><path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h5.17l2 2H20v8z"/></svg>
-            <span>选择文件夹</span>
-          </div>
-          <span id="folder-count" class="folder-count"></span>
-        </div>
-
-        <!-- Breadcrumb -->
-        <div id="breadcrumb" class="breadcrumb">
-          <button class="breadcrumb-item breadcrumb-root" data-folder-id="root">
-            <svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;flex-shrink:0;"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
-          </button>
-        </div>
-
-        <!-- Folder Cards -->
-        <div class="folder-cards-container">
-          <div id="folder-cards" class="folder-cards-grid">
-            <div class="empty-state">正在加载文件夹...</div>
-          </div>
-        </div>
-
-        <!-- Selected folder display -->
-        <div id="selected-folder-bar" class="selected-folder-bar" style="display:none;">
-          <svg viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px;color:#10b981;flex-shrink:0;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
-          <span class="path-text" id="selected-folder-path"></span>
-        </div>
+      <div class="form-group">
+        <label class="form-label">网址</label>
+        <input type="text" id="bookmark-url" class="form-input url-input" readonly>
       </div>
     </div>
+
+    <div class="left-footer">
+      <button id="btn-cancel" class="btn btn-secondary">取消</button>
+      <button id="btn-save" class="btn btn-primary">保存</button>
+    </div>
   </div>
 
-  <div class="footer">
-    <button id="btn-cancel" class="btn btn-secondary">取消</button>
-    <button id="btn-save" class="btn btn-primary">保存</button>
+  <div class="folder-section">
+    <div class="folder-header">
+      <div class="folder-header-left">
+        <svg viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px;color:#10b981;flex-shrink:0;"><path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h5.17l2 2H20v8z"/></svg>
+        <span>选择文件夹</span>
+      </div>
+      <span id="folder-count" class="folder-count"></span>
+    </div>
+
+    <div id="breadcrumb" class="breadcrumb">
+      <button class="breadcrumb-item breadcrumb-root" data-folder-id="root">
+        <svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;flex-shrink:0;"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+      </button>
+    </div>
+
+    <div class="folder-cards-container">
+      <div id="folder-cards" class="folder-cards-grid">
+        <div class="empty-state">正在加载文件夹...</div>
+      </div>
+    </div>
+
+    <div id="selected-folder-bar" class="selected-folder-bar" style="display:none;">
+      <svg viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px;color:#10b981;flex-shrink:0;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+      <span class="path-text" id="selected-folder-path"></span>
+    </div>
   </div>
 
   <div id="toast" class="success-toast">已保存到书签</div>
