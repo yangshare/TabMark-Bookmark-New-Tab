@@ -1,7 +1,5 @@
 # TabMark-你的书签,值得被重新看见
 
-## 项目网站: www.ainewtab.app
-
 TabMark 将收藏夹变成新标签页，让你收藏的书签一目了然、整洁高效，快速直达你最需要的网站和资源。搭配智能 AI 搜索，更快找到你想要的答案。支持 Chrome 和 Edge。
 
 ![MacBook Air 13_ - 5@1x](https://github.com/user-attachments/assets/bb4f9996-902c-4b69-8a7f-4c2b2e219ffc)
@@ -10,7 +8,7 @@ TabMark 将收藏夹变成新标签页，让你收藏的书签一目了然、整
 
 - chrome 商店版本：1.243（实际为 1.241 版本，为 1.242 版本回滚）
 - Edge版本：1.245 审核中
-- GitHub 版本：1.245
+- GitHub 版本：实时最新
 
 ## 主要功能
 
