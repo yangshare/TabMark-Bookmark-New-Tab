@@ -9,7 +9,8 @@ TabMark 高效收藏和管理你书签。
 
 
 **高效收藏**：打开某个网站，然后点击扩展图标即可快速收藏网站地址到指定目录；
-<img width="818" height="671" alt="image" src="https://github.com/user-attachments/assets/4f9bce15-9689-4e37-b71b-de0fda313fe1" />
+<img width="1919" height="1031" alt="image" src="https://github.com/user-attachments/assets/75a5baef-f81c-4345-a724-10f98142d604" />
+
 
 
 
