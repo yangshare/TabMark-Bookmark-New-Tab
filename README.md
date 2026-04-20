@@ -38,6 +38,11 @@ TabMark 高效收藏和管理你书签。
 **浏览器功能快捷方式**：展示浏览器历史记录、下载、密码管理、拓展管理的快捷链接；
 
 
-### 使用教程
-https://cooing-loganberry-b74.notion.site/TabMark-Bookmark-New-Tab-7a083a74f84e4bb48345e389c1e53717
+## 安装方式
+
+1. 从 GitHub 仓库页面点击 **Code → Download ZIP** 下载项目源码，并解压到本地文件夹；
+2. 打开 Chrome/Edge 浏览器，地址栏输入 `chrome://extensions`（Edge 为 `edge://extensions`）进入扩展管理页面；
+3. 开启右上角的 **开发者模式**；
+4. 点击 **加载已解压的扩展程序**，选择刚才解压的文件夹，即可完成安装。
+
 
