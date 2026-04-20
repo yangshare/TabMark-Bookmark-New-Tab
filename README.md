@@ -44,5 +44,7 @@ TabMark 高效收藏和管理你书签。
 2. 打开 Chrome/Edge 浏览器，地址栏输入 `chrome://extensions`（Edge 为 `edge://extensions`）进入扩展管理页面；
 3. 开启右上角的 **开发者模式**；
 4. 点击 **加载已解压的扩展程序**，选择刚才解压的文件夹，即可完成安装。
+<img width="1337" height="651" alt="image" src="https://github.com/user-attachments/assets/0425b920-8767-492c-be38-47b886e2e418" />
+
 
 
