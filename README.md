@@ -7,13 +7,11 @@
 ### 📌 书签新标签页
 
 安装该扩展后，选择"将书签设为主页"，打开新标签页即可快速找到所需内容。
-
 <img width="1913" height="1030" alt="image" src="https://github.com/user-attachments/assets/48a268c1-5200-4e98-bddb-f1e18799100b" />
 
 ### ⚡ 高效收藏
 
 打开某个网站，点击扩展图标即可快速收藏网站地址到指定目录。
-
 <img width="1919" height="1031" alt="image" src="https://github.com/user-attachments/assets/75a5baef-f81c-4345-a724-10f98142d604" />
 
 ### 🔀 拖拽移动书签
