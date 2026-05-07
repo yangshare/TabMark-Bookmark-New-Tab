@@ -10,6 +10,7 @@ const FOLDER_ICON = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 6
 const CHEVRON_RIGHT = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M9.29 6.71c-.39.39-.39 1.02 0 1.41L13.17 12l-3.88 3.88c-.39.39-.39 1.02 0 1.41.39.39 1.02.39 1.41 0l4.59-4.59c.39-.39.39-1.02 0-1.41L10.7 6.71c-.38-.39-1.02-.39-1.41 0z"/></svg>`;
 
 let selectedCard = null;
+let contextMenuFolder = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
   const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -27,10 +28,26 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   document.getElementById('btn-save').addEventListener('click', saveBookmark);
+  document.getElementById('btn-create-folder').addEventListener('click', showCreateFolderPanel);
+  document.getElementById('btn-confirm-create-folder').addEventListener('click', createFolder);
+  document.getElementById('btn-cancel-create-folder').addEventListener('click', hideCreateFolderPanel);
+  document.getElementById('btn-rename-folder').addEventListener('click', renameContextFolder);
+  document.getElementById('btn-delete-folder').addEventListener('click', deleteContextFolder);
+  document.addEventListener('click', hideFolderContextMenu);
+  document.addEventListener('scroll', hideFolderContextMenu, true);
 
   document.getElementById('bookmark-title').addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
       saveBookmark();
+    }
+  });
+
+  document.getElementById('new-folder-name').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      createFolder();
+    }
+    if (e.key === 'Escape') {
+      hideCreateFolderPanel();
     }
   });
 });
@@ -59,12 +76,18 @@ function loadBookmarkFolders() {
 
 function enterFolder(folderId, folderTitle) {
   currentFolderId = folderId;
+  selectedFolderId = folderId;
 
-  const existingIndex = breadcrumbPath.findIndex(p => p.id === folderId);
-  if (existingIndex >= 0) {
-    breadcrumbPath = breadcrumbPath.slice(0, existingIndex + 1);
+  const fullPath = getFolderPathItems(bookmarkTreeData, folderId);
+  if (fullPath) {
+    breadcrumbPath = fullPath;
   } else {
-    breadcrumbPath.push({ id: folderId, title: folderTitle });
+    const existingIndex = breadcrumbPath.findIndex(p => p.id === folderId);
+    if (existingIndex >= 0) {
+      breadcrumbPath = breadcrumbPath.slice(0, existingIndex + 1);
+    } else {
+      breadcrumbPath.push({ id: folderId, title: folderTitle });
+    }
   }
 
   renderBreadcrumb();
@@ -74,6 +97,7 @@ function enterFolder(folderId, folderTitle) {
 
   const folderCount = children.length;
   document.getElementById('folder-count').textContent = folderCount > 0 ? `${folderCount} 个文件夹` : '';
+  updateSelectedFolderDisplay();
 }
 
 function findFolderChildren(nodes, folderId) {
@@ -107,6 +131,20 @@ function getFolderPath(nodes, folderId, path = []) {
     }
     if (node.children) {
       const result = getFolderPath(node.children, folderId, [...path, node.title]);
+      if (result) return result;
+    }
+  }
+  return null;
+}
+
+function getFolderPathItems(nodes, folderId, path = []) {
+  for (const node of nodes) {
+    const nextPath = [...path, { id: node.id, title: node.title }];
+    if (node.id === folderId) {
+      return nextPath;
+    }
+    if (node.children) {
+      const result = getFolderPathItems(node.children, folderId, nextPath);
       if (result) return result;
     }
   }
@@ -157,18 +195,7 @@ function renderFolderCards(folders) {
   container.innerHTML = '';
   selectedCard = null;
 
-  if (currentFolderId) {
-    const currentFolder = findFolderInfo(bookmarkTreeData, currentFolderId);
-    if (currentFolder) {
-      const currentCard = createFolderCard(currentFolder, true);
-      container.appendChild(currentCard);
-      if (selectedFolderId === currentFolder.id) {
-        selectedCard = currentCard;
-      }
-    }
-  }
-
-  if (folders.length === 0 && !currentFolderId) {
+  if (folders.length === 0) {
     container.innerHTML = '<div class="empty-state">此文件夹下没有子文件夹</div>';
     return;
   }
@@ -233,6 +260,18 @@ function createFolderCard(folder, isCurrentFolder) {
     selectFolder(folder.id, card);
   });
 
+  card.addEventListener('dblclick', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    enterFolder(folder.id, folder.title);
+  });
+
+  card.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    showFolderContextMenu(e, folder);
+  });
+
   return card;
 }
 
@@ -263,6 +302,206 @@ function updateSelectedFolderDisplay() {
   } else {
     bar.style.display = 'none';
   }
+}
+
+function showCreateFolderPanel() {
+  const panel = document.getElementById('create-folder-panel');
+  const input = document.getElementById('new-folder-name');
+  panel.classList.add('show');
+  input.value = '';
+  requestAnimationFrame(() => input.focus());
+}
+
+function hideCreateFolderPanel() {
+  const panel = document.getElementById('create-folder-panel');
+  const input = document.getElementById('new-folder-name');
+  panel.classList.remove('show');
+  input.value = '';
+}
+
+function getCreateFolderParentId() {
+  return currentFolderId || selectedFolderId || BOOKMARKS_BAR_ID;
+}
+
+function reloadBookmarkTree(callback) {
+  chrome.bookmarks.getTree((tree) => {
+    if (chrome.runtime.lastError || !tree || !tree[0] || !tree[0].children) {
+      showToast('刷新目录失败', '#ef4444');
+      return;
+    }
+
+    bookmarkTreeData = tree[0].children;
+    callback();
+  });
+}
+
+function refreshFolderView(folderId = currentFolderId) {
+  if (folderId) {
+    const folder = findFolderInfo(bookmarkTreeData, folderId);
+    if (folder) {
+      enterFolder(folder.id, folder.title);
+      return;
+    }
+  }
+
+  currentFolderId = null;
+  breadcrumbPath = [];
+  renderBreadcrumb();
+  const rootFolders = bookmarkTreeData.filter(n => n.children);
+  renderFolderCards(rootFolders);
+  document.getElementById('folder-count').textContent = rootFolders.length > 0 ? `${rootFolders.length} 个文件夹` : '';
+}
+
+function isFolderEditable(folder) {
+  return folder && !folder.unmodifiable;
+}
+
+function isFolderInSubtree(rootFolderId, targetFolderId) {
+  const path = getFolderPathItems(bookmarkTreeData, targetFolderId);
+  return Boolean(path && path.some(item => item.id === rootFolderId));
+}
+
+function showFolderContextMenu(event, folder) {
+  if (!isFolderEditable(folder)) {
+    showToast('该目录不支持修改', '#ef4444');
+    return;
+  }
+
+  contextMenuFolder = folder;
+  const menu = document.getElementById('folder-context-menu');
+  menu.classList.add('show');
+
+  const menuRect = menu.getBoundingClientRect();
+  const left = Math.min(event.clientX, window.innerWidth - menuRect.width - 8);
+  const top = Math.min(event.clientY, window.innerHeight - menuRect.height - 8);
+  menu.style.left = `${Math.max(8, left)}px`;
+  menu.style.top = `${Math.max(8, top)}px`;
+}
+
+function hideFolderContextMenu() {
+  const menu = document.getElementById('folder-context-menu');
+  if (menu) {
+    menu.classList.remove('show');
+  }
+}
+
+function renameContextFolder(event) {
+  event.stopPropagation();
+  const folder = contextMenuFolder;
+  hideFolderContextMenu();
+
+  if (!isFolderEditable(folder)) {
+    showToast('该目录不支持修改', '#ef4444');
+    return;
+  }
+
+  const newTitle = prompt('请输入新的目录名称', folder.title || '');
+  if (newTitle === null) return;
+
+  const title = newTitle.trim();
+  if (!title) {
+    showToast('请输入目录名称', '#ef4444');
+    return;
+  }
+
+  chrome.bookmarks.update(folder.id, { title }, () => {
+    if (chrome.runtime.lastError) {
+      showToast('重命名失败: ' + chrome.runtime.lastError.message, '#ef4444');
+      return;
+    }
+
+    reloadBookmarkTree(() => {
+      refreshFolderView(currentFolderId);
+      if (selectedFolderId === folder.id) {
+        updateSelectedFolderDisplay();
+      }
+      showToast('目录已重命名');
+    });
+  });
+}
+
+function deleteContextFolder(event) {
+  event.stopPropagation();
+  const folder = contextMenuFolder;
+  hideFolderContextMenu();
+
+  if (!isFolderEditable(folder)) {
+    showToast('该目录不支持删除', '#ef4444');
+    return;
+  }
+
+  const confirmed = confirm(`确定删除目录“${folder.title || '未命名'}”及其包含的所有书签吗？`);
+  if (!confirmed) return;
+
+  const fallbackFolderId = folder.parentId || BOOKMARKS_BAR_ID;
+  const currentFolderWasDeleted = currentFolderId && isFolderInSubtree(folder.id, currentFolderId);
+  const selectedFolderWasDeleted = selectedFolderId && isFolderInSubtree(folder.id, selectedFolderId);
+
+  chrome.bookmarks.removeTree(folder.id, () => {
+    if (chrome.runtime.lastError) {
+      showToast('删除目录失败: ' + chrome.runtime.lastError.message, '#ef4444');
+      return;
+    }
+
+    if (selectedFolderWasDeleted) {
+      selectedFolderId = fallbackFolderId;
+    }
+    if (currentFolderWasDeleted) {
+      currentFolderId = fallbackFolderId;
+    }
+
+    reloadBookmarkTree(() => {
+      refreshFolderView(currentFolderId || fallbackFolderId);
+      updateSelectedFolderDisplay();
+      showToast('目录已删除');
+    });
+  });
+}
+
+function createFolder() {
+  const input = document.getElementById('new-folder-name');
+  const confirmButton = document.getElementById('btn-confirm-create-folder');
+  const title = input.value.trim();
+
+  if (!title) {
+    input.focus();
+    showToast('请输入目录名称', '#ef4444');
+    return;
+  }
+
+  const parentId = getCreateFolderParentId();
+  confirmButton.disabled = true;
+
+  chrome.bookmarks.create({
+    parentId,
+    title
+  }, (folder) => {
+    confirmButton.disabled = false;
+
+    if (chrome.runtime.lastError) {
+      showToast('创建目录失败: ' + chrome.runtime.lastError.message, '#ef4444');
+      return;
+    }
+
+    hideCreateFolderPanel();
+
+    reloadBookmarkTree(() => {
+      const parentFolder = findFolderInfo(bookmarkTreeData, folder.parentId);
+      if (parentFolder) {
+        enterFolder(parentFolder.id, parentFolder.title);
+      } else {
+        renderFolderCards(bookmarkTreeData.filter(n => n.children));
+      }
+
+      const newFolderCard = document.querySelector(`.folder-card[data-id="${folder.id}"]`);
+      selectFolder(folder.id, newFolderCard);
+      if (newFolderCard) {
+        newFolderCard.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      }
+
+      showToast('目录已创建');
+    });
+  });
 }
 
 function saveBookmark() {

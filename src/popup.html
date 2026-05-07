@@ -132,6 +132,39 @@
       font-weight: 400;
     }
 
+    .folder-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+
+    .create-folder-button {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 12px;
+      border: 1px solid #10b981;
+      border-radius: 8px;
+      background-color: #fff;
+      color: #059669;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .create-folder-button:hover {
+      background-color: #ecfdf5;
+      border-color: #059669;
+    }
+
+    .create-folder-button svg {
+      width: 14px;
+      height: 14px;
+      flex-shrink: 0;
+    }
+
     .breadcrumb {
       display: flex;
       align-items: center;
@@ -181,6 +214,79 @@
 
     .breadcrumb-root {
       color: #999;
+    }
+
+    .create-folder-panel {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 18px;
+      background-color: #f8fffc;
+      border-bottom: 1px solid #d1fae5;
+      flex-shrink: 0;
+    }
+
+    .create-folder-panel.show {
+      display: flex;
+    }
+
+    .create-folder-input {
+      flex: 1;
+      min-width: 0;
+      height: 34px;
+      padding: 7px 10px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 13px;
+      color: #333;
+      background-color: #fff;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .create-folder-input:focus {
+      outline: none;
+      border-color: #10b981;
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
+    }
+
+    .create-folder-actions {
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .small-btn {
+      height: 34px;
+      padding: 0 12px;
+      border: none;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .small-btn:disabled {
+      cursor: not-allowed;
+      opacity: 0.65;
+    }
+
+    .small-btn-primary {
+      background-color: #10b981;
+      color: #fff;
+    }
+
+    .small-btn-primary:hover {
+      background-color: #059669;
+    }
+
+    .small-btn-secondary {
+      background-color: #e8e8e8;
+      color: #555;
+    }
+
+    .small-btn-secondary:hover {
+      background-color: #ddd;
     }
 
     .folder-cards-container {
@@ -336,6 +442,49 @@
       opacity: 1;
     }
 
+    .folder-context-menu {
+      position: fixed;
+      display: none;
+      min-width: 132px;
+      padding: 6px;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      background-color: #fff;
+      box-shadow: 0 10px 28px rgba(15, 23, 42, 0.16);
+      z-index: 900;
+    }
+
+    .folder-context-menu.show {
+      display: block;
+    }
+
+    .folder-context-menu button {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border: none;
+      border-radius: 6px;
+      background-color: transparent;
+      color: #374151;
+      font-size: 13px;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .folder-context-menu button:hover {
+      background-color: #f3f4f6;
+    }
+
+    .folder-context-menu button.danger {
+      color: #dc2626;
+    }
+
+    .folder-context-menu button.danger:hover {
+      background-color: #fef2f2;
+    }
+
     /* Empty state */
     .empty-state {
       padding: 30px;
@@ -471,13 +620,27 @@
         <svg viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px;color:#10b981;flex-shrink:0;"><path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h5.17l2 2H20v8z"/></svg>
         <span>选择文件夹</span>
       </div>
-      <span id="folder-count" class="folder-count"></span>
+      <div class="folder-header-actions">
+        <span id="folder-count" class="folder-count"></span>
+        <button id="btn-create-folder" class="create-folder-button" type="button">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-1 11h-4v4h-4v-4H6v-4h4V6h4v4h4v4z"/></svg>
+          <span>创建目录</span>
+        </button>
+      </div>
     </div>
 
     <div id="breadcrumb" class="breadcrumb">
       <button class="breadcrumb-item breadcrumb-root" data-folder-id="root">
         <svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;flex-shrink:0;"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
       </button>
+    </div>
+
+    <div id="create-folder-panel" class="create-folder-panel">
+      <input id="new-folder-name" class="create-folder-input" type="text" placeholder="新目录名称">
+      <div class="create-folder-actions">
+        <button id="btn-confirm-create-folder" class="small-btn small-btn-primary" type="button">创建</button>
+        <button id="btn-cancel-create-folder" class="small-btn small-btn-secondary" type="button">取消</button>
+      </div>
     </div>
 
     <div class="folder-cards-container">
@@ -490,6 +653,11 @@
       <svg viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px;color:#10b981;flex-shrink:0;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
       <span class="path-text" id="selected-folder-path"></span>
     </div>
+  </div>
+
+  <div id="folder-context-menu" class="folder-context-menu">
+    <button id="btn-rename-folder" type="button">重命名</button>
+    <button id="btn-delete-folder" class="danger" type="button">删除目录</button>
   </div>
 
   <div id="toast" class="success-toast">已保存到书签</div>
