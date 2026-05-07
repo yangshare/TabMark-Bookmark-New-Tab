@@ -2296,6 +2296,23 @@ function createContextMenuItems(contextMenu, type) {
   });
 }
 
+function buildConfirmMessage(i18nKey, title) {
+  const fragment = document.createDocumentFragment();
+  const msg = chrome.i18n.getMessage(i18nKey, [title]);
+  if (!msg) return fragment;
+  const idx = msg.indexOf(title);
+  if (idx === -1) {
+    fragment.appendChild(document.createTextNode(msg));
+    return fragment;
+  }
+  fragment.appendChild(document.createTextNode(msg.slice(0, idx)));
+  const strong = document.createElement('strong');
+  strong.textContent = title;
+  fragment.appendChild(strong);
+  fragment.appendChild(document.createTextNode(msg.slice(idx + title.length)));
+  return fragment;
+}
+
 function showDeleteConfirmDialog() {
   if (!itemToDelete || !itemToDelete.data) {
     console.error('Invalid delete item:', itemToDelete);
@@ -2318,11 +2335,8 @@ function showDeleteConfirmDialog() {
   // 清空之前的消息
   confirmMessage.innerHTML = '';
   
-  // 根据类型显示不同的确认消息
-  const message = itemToDelete.type === 'quickLink' 
-    ? chrome.i18n.getMessage("confirmDeleteQuickLink", [`<strong>${itemToDelete.data.title}</strong>`])
-    : chrome.i18n.getMessage("confirmDeleteBookmark", [`<strong>${itemToDelete.data.title}</strong>`]);
-  confirmMessage.innerHTML = message;
+  const i18nKey = itemToDelete.type === 'quickLink' ? 'confirmDeleteQuickLink' : 'confirmDeleteBookmark';
+  confirmMessage.appendChild(buildConfirmMessage(i18nKey, itemToDelete.data.title));
   
   console.log('Showing confirmation dialog for:', {
     type: itemToDelete.type,
@@ -2376,7 +2390,6 @@ function createQuickLinkCard(quickLink) {
   card.dataset.id = quickLink.id;
   card.dataset.type = 'quickLink';  // 明确设置类型
 
-  // ... 其他代码保持不变 ...
 
   card.addEventListener('contextmenu', function(event) {
     event.preventDefault();
@@ -2445,11 +2458,7 @@ function confirmBookmarkDeletion(bookmark) {
   // 清空之前的消息
   confirmMessage.innerHTML = '';
   
-  // 只显示书签删除的确认消息
-  confirmMessage.innerHTML = chrome.i18n.getMessage(
-    "confirmDeleteBookmark", 
-    [`<strong>${bookmark.title}</strong>`]
-  );
+  confirmMessage.appendChild(buildConfirmMessage('confirmDeleteBookmark', bookmark.title));
   
   confirmDialog.style.display = 'block';
 
@@ -2519,11 +2528,7 @@ function confirmQuickLinkDeletion(quickLink) {
   // 清空之前的消息
   confirmMessage.innerHTML = '';
   
-  // 只显示快捷链接删除的确认消息
-  confirmMessage.innerHTML = chrome.i18n.getMessage(
-    "confirmDeleteQuickLink", 
-    [`<strong>${quickLink.title}</strong>`]
-  );
+  confirmMessage.appendChild(buildConfirmMessage('confirmDeleteQuickLink', quickLink.title));
   
   confirmDialog.style.display = 'block';
 

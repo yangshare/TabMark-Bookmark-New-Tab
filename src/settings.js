@@ -1,5 +1,11 @@
-// 导入所需的依赖
 import { ICONS } from './icons.js';
+
+const LAYOUT_DEFAULTS = {
+  BOOKMARK_WIDTH: 190,
+  BOOKMARK_CARD_HEIGHT: 48,
+  BOOKMARK_CONTAINER_WIDTH: 85,
+  RESIZE_DEBOUNCE_MS: 250
+};
 
 // 设置管理器类
 class SettingsManager {
@@ -520,7 +526,7 @@ class SettingsManager {
     
     // 从存储中获取保存的宽度值
     chrome.storage.sync.get(['bookmarkWidth'], (result) => {
-      const savedWidth = result.bookmarkWidth || 190; // 默认190px
+      const savedWidth = result.bookmarkWidth || LAYOUT_DEFAULTS.BOOKMARK_WIDTH;
       this.widthSlider.value = savedWidth;
       this.widthValue.textContent = savedWidth;
       this.updatePreviewCount(savedWidth);
@@ -544,7 +550,7 @@ class SettingsManager {
     // 添加窗口大小改变的监听
     const debouncedUpdate = this.debounce(() => {
       this.updatePreviewCount(this.widthSlider.value);
-    }, 250);
+    }, LAYOUT_DEFAULTS.RESIZE_DEBOUNCE_MS);
     window.addEventListener('resize', debouncedUpdate);
   }
   
@@ -561,7 +567,7 @@ class SettingsManager {
     
     // 从存储中获取保存的高度值
     chrome.storage.sync.get('bookmarkCardHeight', (result) => {
-      const savedHeight = result.bookmarkCardHeight || 48; // 默认值为48px
+      const savedHeight = result.bookmarkCardHeight || LAYOUT_DEFAULTS.BOOKMARK_CARD_HEIGHT;
       
       // 设置滑块和显示值
       this.heightSlider.value = savedHeight;
@@ -662,7 +668,7 @@ class SettingsManager {
     
     // 从存储中获取保存的宽度值
     chrome.storage.sync.get(['bookmarkContainerWidth'], (result) => {
-      const savedWidth = result.bookmarkContainerWidth || 85; // 默认85%
+      const savedWidth = result.bookmarkContainerWidth || LAYOUT_DEFAULTS.BOOKMARK_CONTAINER_WIDTH;
       this.containerWidthSlider.value = savedWidth;
       this.containerWidthValue.textContent = savedWidth;
       this.updateContainerWidth(savedWidth);

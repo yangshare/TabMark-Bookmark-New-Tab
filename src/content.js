@@ -268,72 +268,50 @@
     }
   });
 
+  const SEARCH_SWITCHER_ENGINES = [
+    { name: 'google', icon: 'images/google-logo.svg', url: 'https://www.google.com/search?q=', shortcut: 1, label: 'Google' },
+    { name: 'bing', icon: 'images/bing-logo.png', url: 'https://www.bing.com/search?q=', shortcut: 2, label: 'Bing' },
+    { name: 'baidu', icon: 'images/baidu-logo.svg', url: 'https://www.baidu.com/s?wd=', shortcut: 3, label: '百度' },
+    { name: 'kimi', icon: 'images/kimi-logo.svg', url: 'https://kimi.moonshot.cn/?q=', shortcut: 4, label: 'Kimi' },
+    { name: 'felo', icon: 'images/felo-logo.svg', url: 'https://felo.ai/search?q=', shortcut: 5, label: 'Felo' },
+    { name: 'metaso', icon: 'images/metaso-logo.png', url: 'https://metaso.cn/?q=', shortcut: 6, label: 'Metaso' },
+    { name: 'doubao', icon: 'images/doubao-logo.png', url: 'https://www.doubao.com/?q=', shortcut: 7, label: '豆包' },
+    { name: 'chatgpt', icon: 'images/chatgpt-logo.svg', url: 'https://chat.openai.com/?q=', shortcut: 8, label: 'ChatGPT', hostnames: ['chat.openai.com', 'chatgpt.com'] },
+    { name: 'grok', icon: 'images/grok-logo.svg', url: 'https://grok.com/?q=', shortcut: 9, label: 'Grok' }
+  ];
+
   function getCurrentSearchEngine() {
     const hostname = window.location.hostname;
-    if (hostname.includes('google.com')) {
-      return 'google';
-    } else if (hostname.includes('bing.com')) {
-      return 'bing';
-    } else if (hostname.includes('baidu.com')) {
-      return 'baidu';
-    } else if (hostname.includes('kimi.moonshot.cn')) {
-      return 'kimi';
-    } else if (hostname.includes('felo.ai')) {
-      return 'felo';
-    } else if (hostname.includes('metaso.cn')) {
-      return 'metaso';
-    } else if (hostname.includes('doubao.com')) {
-      return 'doubao';
-    } else {
-      return 'bing';
-    }
+    const engine = SEARCH_SWITCHER_ENGINES.find(e => {
+      if (e.hostnames) return e.hostnames.some(h => hostname.includes(h));
+      return hostname.includes(e.name);
+    });
+    return engine ? engine.name : 'bing';
   }
 
   const defaultSearchEngine = getCurrentSearchEngine();
 
   const searchSwitcher = document.createElement('aside');
   searchSwitcher.id = 'search-switcher';
-  searchSwitcher.innerHTML = `
-<ul>
-  <li data-url="https://www.google.com/search?q=" data-shortcut="1" ${defaultSearchEngine === 'google' ? 'class="selected"' : ''}>
-    <img src="${chrome.runtime.getURL('../images/google-logo.svg')}" alt="Google" class="search-icon">
-    <span>Google <span class="shortcut-key">Alt+1</span></span>
-  </li>
-  <li data-url="https://www.bing.com/search?q=" data-shortcut="2" ${defaultSearchEngine === 'bing' ? 'class="selected"' : ''}>
-    <img src="${chrome.runtime.getURL('../images/bing-logo.png')}" alt="Bing" class="search-icon">
-    <span>Bing <span class="shortcut-key">Alt+2</span></span>
-  </li>
-  <li data-url="https://www.baidu.com/s?wd=" data-shortcut="3" ${defaultSearchEngine === 'baidu' ? 'class="selected"' : ''}>
-    <img src="${chrome.runtime.getURL('../images/baidu-logo.svg')}" alt="Baidu" class="search-icon">
-    <span>百度 <span class="shortcut-key">Alt+3</span></span>
-  </li>
-  <li data-url="https://kimi.moonshot.cn/?q=" data-shortcut="4" ${defaultSearchEngine === 'kimi' ? 'class="selected"' : ''}>
-    <img src="${chrome.runtime.getURL('../images/kimi-logo.svg')}" alt="Kimi" class="search-icon">
-    <span>Kimi <span class="shortcut-key">Alt+4</span></span>
-  </li>
-  <li data-url="https://felo.ai/search?q=" data-shortcut="5" ${defaultSearchEngine === 'felo' ? 'class="selected"' : ''}>
-    <img src="${chrome.runtime.getURL('../images/felo-logo.svg')}" alt="Felo" class="search-icon">
-    <span>Felo <span class="shortcut-key">Alt+5</span></span>
-  </li>
-  <li data-url="https://metaso.cn/?q=" data-shortcut="6" ${defaultSearchEngine === 'metaso' ? 'class="selected"' : ''}>
-    <img src="${chrome.runtime.getURL('../images/sider-icon/metaso-logo.png')}" alt="Metaso" class="search-icon">
-    <span>Metaso <span class="shortcut-key">Alt+6</span></span>
-  </li>
-  <li data-url="https://www.doubao.com/chat/?q=" data-shortcut="7" ${defaultSearchEngine === 'doubao' ? 'class="selected"' : ''}>
-    <img src="${chrome.runtime.getURL('../images/sider-icon/doubao-logo.png')}" alt="Doubao" class="search-icon">
-    <span>豆包 <span class="shortcut-key">Alt+7</span></span>
-  </li>
-  <li data-url="https://chatgpt.com/?q=" data-shortcut="8" ${defaultSearchEngine === 'ChatGPT' ? 'class="selected"' : ''}>
-    <img src="${chrome.runtime.getURL('../images/sider-icon/chatgpt-logo.svg')}" alt="ChatGPT" class="search-icon">
-    <span>ChatGPT <span class="shortcut-key">Alt+8</span></span>
-  </li>
-  <li data-url="https://grok.com/?q=" data-shortcut="9" ${defaultSearchEngine === 'grok' ? 'class="selected"' : ''}>
-    <img src="${chrome.runtime.getURL('../images/grok-logo.svg')}" alt="Grok" class="search-icon">
-    <span>Grok <span class="shortcut-key">Alt+9</span></span>
-  </li>
-</ul>
-<ul id="bookmark-list"></ul>
-  `;
+
+  const searchUl = document.createElement('ul');
+  SEARCH_SWITCHER_ENGINES.forEach((engine) => {
+    const li = document.createElement('li');
+    li.dataset.engine = engine.name;
+    li.dataset.url = engine.url;
+    li.dataset.shortcut = String(engine.shortcut);
+    if (defaultSearchEngine === engine.name) {
+      li.classList.add('selected');
+    }
+    li.innerHTML = `<img src="${chrome.runtime.getURL('../' + engine.icon)}" alt="${engine.label}" class="search-icon">
+      <span>${engine.label} <span class="shortcut-key">Alt+${engine.shortcut}</span></span>`;
+    searchUl.appendChild(li);
+  });
+  searchSwitcher.appendChild(searchUl);
+
+  const bookmarkList = document.createElement('ul');
+  bookmarkList.id = 'bookmark-list';
+  searchSwitcher.appendChild(bookmarkList);
 
   sidebarContainer.appendChild(searchSwitcher);
 
@@ -372,7 +350,7 @@
 
       searchSwitcher.querySelectorAll('li').forEach(li => li.classList.remove('selected'));
       item.classList.add('selected');
-      localStorage.setItem('selectedSearchEngine', item.textContent.trim().split(' ')[0]);
+      localStorage.setItem('selectedSearchEngine', item.dataset.engine);
     }
   }
 
